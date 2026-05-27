@@ -2,6 +2,7 @@ import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { LandingPage } from './components/LandingPage';
+import { AuthCallback } from './components/AuthCallback';
 import './index.css';
 
 // One-time localStorage migration: copy any legacy `coa.*` keys to `at.*` then
@@ -46,6 +47,11 @@ function Root() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  // Magic-link return path. A real path (not a hash) so Supabase can redirect
+  // to it; public/_redirects serves index.html here on Cloudflare.
+  if (window.location.pathname === '/auth/callback') {
+    return <AuthCallback />;
+  }
   // #app (or any subroute under it) goes to the application. Everything else
   // shows the marketing landing page.
   if (hash.startsWith('#app')) {
