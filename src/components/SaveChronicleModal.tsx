@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { saveChronicle, signIn, verifyCode } from '../lib/auth';
+import { saveChronicle, signIn, verifyCode, OTP_LENGTH } from '../lib/auth';
+import { OtpInput } from './OtpInput';
 
 export type AuthModalMode = 'save' | 'signin';
 
@@ -25,7 +26,7 @@ const COPY = {
   signin: {
     title: 'Welcome back',
     blurb:
-      "Enter the email tied to your chronicle and we'll send a 6-digit code. No password needed.",
+      "Enter the email tied to your chronicle and we'll send a one-time code. No password needed.",
     cta: 'Send me a code',
     switchPrompt: 'New here?',
     switchLabel: 'Save your chronicle',
@@ -121,10 +122,11 @@ export function SaveChronicleModal({ open, mode, onClose, onSwitchMode }: Props)
     if (isResend) startCooldown();
   }
 
-  async function submitCode() {
-    const c = code.trim();
-    if (!/^\d{6}$/.test(c)) {
-      setError('Enter the 6-digit code from your email.');
+  async function submitCode(overrideCode?: string) {
+    if (busy) return;
+    const c = (overrideCode ?? code).trim();
+    if (c.length !== OTP_LENGTH || /\D/.test(c)) {
+      setError(`Enter the ${OTP_LENGTH}-digit code from your email.`);
       return;
     }
     setBusy(true);
@@ -157,31 +159,27 @@ export function SaveChronicleModal({ open, mode, onClose, onSwitchMode }: Props)
 
         {step === 'verify' ? (
           <>
-            <p style={{ marginTop: 0, fontFamily: 'var(--font-body)', fontSize: 16 }}>
-              📜 Enter the 6-digit code we sent to <strong style={{ color: 'var(--fg)' }}>{email.trim()}</strong>.
+            <p style={{ marginTop: 0, fontFamily: 'var(--font-body)', fontSize: 16, textAlign: 'center' }}>
+              📜 Enter the {OTP_LENGTH}-digit code we sent to <strong style={{ color: 'var(--fg)' }}>{email.trim()}</strong>.
             </p>
 
-            <div className="at-settings-row">
-              <input
-                className="at-input"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                placeholder="123456"
+            <div style={{ margin: '1.25rem 0 0.5rem' }}>
+              <OtpInput
+                length={OTP_LENGTH}
                 value={code}
+                disabled={busy}
                 autoFocus
-                maxLength={6}
-                spellCheck={false}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !busy) submitCode();
-                }}
+                onChange={(next) => { setCode(next); if (error) setError(null); }}
+                onComplete={(full) => { void submitCode(full); }}
               />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
               <button
                 type="button"
                 className="at-btn at-btn-primary"
-                onClick={submitCode}
-                disabled={busy || code.trim().length !== 6}
+                onClick={() => submitCode()}
+                disabled={busy || code.trim().length !== OTP_LENGTH}
               >
                 {busy ? 'Verifying…' : 'Verify'}
               </button>

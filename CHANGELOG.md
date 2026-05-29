@@ -7,6 +7,20 @@ Phase 1 ships.
 
 ## [Unreleased] — Phase 0 shipped 🎉
 
+### Fixed — OTP code length + segmented input *(2026-05-29)*
+
+- **Auth could never verify.** The project emits **8-digit** email codes but
+  the app validated for 6 (`/^\d{6}$/` in `auth.ts`, `maxLength={6}` in the
+  modal), so every verification was rejected before reaching Supabase. Length
+  is now a single shared constant `OTP_LENGTH` (`src/lib/auth.ts`) that drives
+  validation, the input, and the copy — one-line change if the Supabase OTP
+  setting ever moves.
+- **Segmented code input** (`src/components/OtpInput.tsx`). The verify step is
+  now N single-character boxes that auto-advance on type, backspace to the
+  previous box, accept a pasted code, support arrow-key nav, and auto-submit
+  when the last digit lands. Digits only; gold-on-dark with a focus glow that
+  matches the app's palette. Replaces the single free-text field.
+
 ### Added — Addon: the Scribe persona *(2026-05-28)*
 
 - **The in-game journal now speaks in the Scribe's voice.** The addon

@@ -28,6 +28,14 @@ import { getSupabase, isSupabaseConfigured } from './supabase';
 
 const USER_ID_KEY = 'at.user_id';
 
+// Length of the emailed one-time code. MUST match the Supabase project's
+// "OTP length" setting (Auth → Providers → Email). The whole UI (segmented
+// input, validation, copy) derives from this — change it here if the project
+// setting ever changes.
+export const OTP_LENGTH = 8;
+
+const OTP_RE = new RegExp(`^\\d{${OTP_LENGTH}}$`);
+
 function cacheUserId(id: string | null): void {
   try {
     if (id) window.localStorage.setItem(USER_ID_KEY, id);
@@ -142,8 +150,8 @@ export async function signIn(email: string): Promise<{ error: string | null; con
 }
 
 /**
- * Verify the 6-digit code from the email. `mode` selects the OTP type:
- * 'save' = anonymous→account upgrade (email_change), 'signin' = returning user.
+ * Verify the emailed one-time code (OTP_LENGTH digits). `mode` selects the OTP
+ * type: 'save' = anonymous→account upgrade (email_change), 'signin' = returning user.
  */
 export async function verifyCode(
   email: string,
@@ -153,7 +161,7 @@ export async function verifyCode(
   const supabase = getSupabase();
   if (!supabase) return { error: 'Cloud accounts are not available in this build.' };
   const code = token.trim();
-  if (!/^\d{6}$/.test(code)) return { error: 'Enter the 6-digit code from your email.' };
+  if (!OTP_RE.test(code)) return { error: `Enter the ${OTP_LENGTH}-digit code from your email.` };
 
   if (mode === 'save') {
     // Continuity guard: the session must still be the same anonymous user we
