@@ -2,13 +2,9 @@ import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react
 
 // Segmented one-time-code input: N single-char boxes that auto-advance as you
 // type, backspace to the previous box, accept a pasted code, and fire
-// onComplete when full. Alphanumeric (A-Z + 0-9); we normalize to uppercase
-// as we accept so the user can paste a mixed-case code from email and it just
-// works. The whole code is held by the parent as a single string (`value`);
-// this component is purely presentational over it.
-
-const ALNUM_NOT = /[^A-Za-z0-9]/g;
-const normalize = (s: string) => s.replace(ALNUM_NOT, '').toUpperCase();
+// onComplete when full. Digits only (Supabase email OTP is numeric). The whole
+// code is held by the parent as a single string (`value`); this component is
+// purely presentational over it.
 
 interface OtpInputProps {
   length: number;
@@ -33,26 +29,26 @@ export function OtpInput({ length, value, onChange, onComplete, disabled, autoFo
   }
 
   function commit(joined: string) {
-    const cleaned = normalize(joined).slice(0, length);
+    const cleaned = joined.replace(/\D/g, '').slice(0, length);
     onChange(cleaned);
     if (cleaned.length === length) onComplete?.(cleaned);
     return cleaned;
   }
 
   function handleChange(i: number, raw: string) {
-    const cleaned = normalize(raw);
-    if (cleaned === '') return; // empties are handled by Backspace in keydown
+    const digits = raw.replace(/\D/g, '');
+    if (digits === '') return; // empties are handled by Backspace in keydown
     const arr = chars.slice();
-    if (cleaned.length === 1) {
-      arr[i] = cleaned;
+    if (digits.length === 1) {
+      arr[i] = digits;
       commit(arr.join(''));
       if (i < length - 1) focusBox(i + 1);
     } else {
-      // Fast-typed or autofilled multiple chars — fill forward from this box.
+      // Fast-typed or autofilled multiple digits — fill forward from this box.
       let j = i;
-      for (const c of cleaned) {
+      for (const d of digits) {
         if (j >= length) break;
-        arr[j] = c;
+        arr[j] = d;
         j++;
       }
       commit(arr.join(''));
@@ -90,7 +86,7 @@ export function OtpInput({ length, value, onChange, onComplete, disabled, autoFo
   return (
     <div
       role="group"
-      aria-label={`${length}-character code`}
+      aria-label={`${length}-digit code`}
       style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}
     >
       {chars.map((c, i) => {
@@ -100,9 +96,7 @@ export function OtpInput({ length, value, onChange, onComplete, disabled, autoFo
             key={i}
             ref={(el) => { boxes.current[i] = el; }}
             type="text"
-            inputMode="text"
-            autoCapitalize="characters"
-            autoCorrect="off"
+            inputMode="numeric"
             autoComplete={i === 0 ? 'one-time-code' : 'off'}
             maxLength={1}
             value={c}

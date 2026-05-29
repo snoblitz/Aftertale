@@ -23,15 +23,14 @@ Phase 1 ships.
   request another code in 38s."* Covers rate-limit, expiry, and
   no-such-account cases.
 
-### Changed — OTP switched to 6-char alphanumeric *(2026-05-29)*
+### Changed — OTP length 6 *(2026-05-29)*
 
-- **6 characters, alphanumeric.** Shorter to type than the prior 8-digit
-  numeric AND more entropy (36⁶ ≈ 2.1B vs 10⁸ = 100M). `OTP_LENGTH = 6` and
-  `OTP_RE = ^[A-Z0-9]{6}$` in `auth.ts`. Mixed-case input is normalized to
-  uppercase before validation and send (`normalizeOtp` helper). `OtpInput`
-  accepts text instead of digits-only, `autoCapitalize="characters"` for
-  mobile keyboards, monospace gold-on-dark display stays the same. Copy
-  updated from "6-digit code" → "6-character code" everywhere.
+- **6-digit email code** (down from an interim 8). Shorter to type; the
+  flow now works end to end. `OTP_LENGTH = 6` in `auth.ts` drives
+  validation, the segmented input, and the copy. *(Tried 6-char
+  alphanumeric for more entropy, but Supabase's email OTP is numeric-only
+  — no charset option in the dashboard or Management API — so digits it
+  is.)*
 
 ### Changed — Auth modal redesign *(2026-05-29)*
 

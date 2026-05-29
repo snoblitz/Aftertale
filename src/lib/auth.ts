@@ -29,20 +29,16 @@ import { getSupabase, isSupabaseConfigured } from './supabase';
 const USER_ID_KEY = 'at.user_id';
 
 // Length of the emailed one-time code. MUST match the Supabase project's
-// "OTP length" setting (Auth → Providers → Email). The whole UI (segmented
-// input, validation, copy) derives from this — change it here if the project
-// setting ever changes.
+// "Email OTP length" setting (Auth → Sign In/Providers → Email). Supabase's
+// email OTP is numeric-only — there's no alphanumeric option in the dashboard
+// or the Management API — so this stays digits.
 export const OTP_LENGTH = 6;
 
-// Accepted character class for the OTP. The project is configured to issue
-// alphanumeric codes (A-Z + 0-9); we accept either case here and normalize to
-// uppercase before validation/send so the user can paste a mixed-case code
-// from the email and it just works.
-const OTP_RE = new RegExp(`^[A-Z0-9]{${OTP_LENGTH}}$`);
+const OTP_RE = new RegExp(`^\\d{${OTP_LENGTH}}$`);
 
-/** Normalize a code: strip non-alphanumeric, uppercase. */
+/** Normalize a code: strip everything but digits, cap at OTP_LENGTH. */
 export function normalizeOtp(raw: string): string {
-  return raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, OTP_LENGTH);
+  return raw.replace(/\D/g, '').slice(0, OTP_LENGTH);
 }
 
 // Supabase auth errors come back as raw, slightly clinical strings
@@ -192,7 +188,7 @@ export async function verifyCode(
   const supabase = getSupabase();
   if (!supabase) return { error: 'Cloud accounts are not available in this build.' };
   const code = normalizeOtp(token);
-  if (!OTP_RE.test(code)) return { error: `Enter the ${OTP_LENGTH}-character code from your email.` };
+  if (!OTP_RE.test(code)) return { error: `Enter the ${OTP_LENGTH}-digit code from your email.` };
 
   if (mode === 'save') {
     // Continuity guard: the session must still be the same anonymous user we
