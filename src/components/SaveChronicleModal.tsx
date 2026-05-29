@@ -144,26 +144,29 @@ export function SaveChronicleModal({ open, mode, onClose, onSwitchMode }: Props)
   return createPortal(
     <div className="at-modal-backdrop" onClick={onClose} role="presentation">
       <div
-        className="at-modal"
+        className="at-modal at-auth-modal"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="at-auth-title"
       >
-        <header className="at-modal-header">
-          <h2 id="at-auth-title" style={{ margin: 0 }}>{copy.title}</h2>
-          <button className="at-modal-close" onClick={onClose} aria-label="Close" title="Close (Esc)">
-            ✕
-          </button>
-        </header>
+        <button className="at-modal-close" onClick={onClose} aria-label="Close" title="Close (Esc)">
+          ✕
+        </button>
+
+        <p className="at-auth-kicker">✦ Aftertale</p>
+        <h2 id="at-auth-title" className="at-auth-title">
+          {step === 'verify' ? 'Check your email' : copy.title}
+        </h2>
+        <div className="at-auth-ornament" aria-hidden="true">✦ ✦ ✦</div>
 
         {step === 'verify' ? (
           <>
-            <p style={{ marginTop: 0, fontFamily: 'var(--font-body)', fontSize: 16, textAlign: 'center' }}>
-              📜 Enter the {OTP_LENGTH}-digit code we sent to <strong style={{ color: 'var(--fg)' }}>{email.trim()}</strong>.
+            <p className="at-auth-blurb">
+              Enter the {OTP_LENGTH}-digit code we sent to <strong>{email.trim()}</strong>.
             </p>
 
-            <div style={{ margin: '1.25rem 0 0.5rem' }}>
+            <div className="at-auth-body">
               <OtpInput
                 length={OTP_LENGTH}
                 value={code}
@@ -172,12 +175,10 @@ export function SaveChronicleModal({ open, mode, onClose, onSwitchMode }: Props)
                 onChange={(next) => { setCode(next); if (error) setError(null); }}
                 onComplete={(full) => { void submitCode(full); }}
               />
-            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
               <button
                 type="button"
-                className="at-btn at-btn-primary"
+                className="at-btn at-btn-primary at-auth-btn"
                 onClick={() => submitCode()}
                 disabled={busy || code.trim().length !== OTP_LENGTH}
               >
@@ -186,43 +187,35 @@ export function SaveChronicleModal({ open, mode, onClose, onSwitchMode }: Props)
             </div>
 
             {error && (
-              <p style={{ color: 'var(--danger)', fontSize: 13, margin: '0.6rem 0 0' }}>{error}</p>
+              <div className="at-auth-notice" role="alert">
+                <span className="at-auth-notice-glyph" aria-hidden="true">⚠</span>
+                <span>{error}</span>
+              </div>
             )}
 
-            <p className="muted" style={{ margin: '0.85rem 0 0', fontSize: 13, lineHeight: 1.5 }}>
+            <p className="at-auth-meta">
               Codes expire shortly and can only be used once. Didn’t get it? Check spam, then{' '}
               <button
                 type="button"
+                className="at-auth-link"
                 disabled={busy || cooldown > 0}
                 onClick={() => requestCode(true)}
-                style={{
-                  background: 'none', border: 'none', padding: 0, font: 'inherit',
-                  color: cooldown > 0 ? 'var(--fg-muted)' : 'var(--gold-bright)',
-                  textDecoration: 'underline', cursor: cooldown > 0 ? 'default' : 'pointer',
-                }}
               >
                 {cooldown > 0 ? `resend in ${cooldown}s` : 'resend the code'}
               </button>
               {' · '}
-              <button
-                type="button"
-                onClick={() => { resetAll(); }}
-                style={{
-                  background: 'none', border: 'none', padding: 0, font: 'inherit',
-                  color: 'var(--gold-bright)', textDecoration: 'underline', cursor: 'pointer',
-                }}
-              >
+              <button type="button" className="at-auth-link" onClick={() => resetAll()}>
                 use a different email
               </button>
             </p>
           </>
         ) : (
           <>
-            <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>{copy.blurb}</p>
+            <p className="at-auth-blurb">{copy.blurb}</p>
 
-            <div className="at-settings-row">
+            <div className="at-auth-body">
               <input
-                className="at-input"
+                className="at-input at-auth-input"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
@@ -230,14 +223,14 @@ export function SaveChronicleModal({ open, mode, onClose, onSwitchMode }: Props)
                 value={email}
                 autoFocus
                 spellCheck={false}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !busy) requestCode();
                 }}
               />
               <button
                 type="button"
-                className="at-btn at-btn-primary"
+                className="at-btn at-btn-primary at-auth-btn"
                 onClick={() => requestCode()}
                 disabled={busy || !email.trim()}
               >
@@ -246,40 +239,28 @@ export function SaveChronicleModal({ open, mode, onClose, onSwitchMode }: Props)
             </div>
 
             {error && (
-              <p style={{ color: 'var(--danger)', fontSize: 13, margin: '0.6rem 0 0' }}>
-                {error}
-                {conflict && mode === 'save' && (
-                  <>
-                    {' '}
-                    <button
-                      type="button"
-                      onClick={() => onSwitchMode('signin')}
-                      style={{
-                        background: 'none', border: 'none', padding: 0, font: 'inherit',
-                        color: 'var(--gold-bright)', textDecoration: 'underline', cursor: 'pointer',
-                      }}
-                    >
-                      Sign in instead?
-                    </button>
-                  </>
-                )}
-              </p>
+              <div className="at-auth-notice" role="alert">
+                <span className="at-auth-notice-glyph" aria-hidden="true">⚠</span>
+                <span>
+                  {error}
+                  {conflict && mode === 'save' && (
+                    <>
+                      {' '}
+                      <button type="button" onClick={() => onSwitchMode('signin')}>
+                        Sign in instead?
+                      </button>
+                    </>
+                  )}
+                </span>
+              </div>
             )}
 
-            <p className="muted" style={{ margin: '0.85rem 0 0', fontSize: 13 }}>
+            <p className="at-auth-meta">
               {copy.switchPrompt}{' '}
               <button
                 type="button"
+                className="at-auth-link"
                 onClick={() => onSwitchMode(mode === 'save' ? 'signin' : 'save')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  padding: 0,
-                  font: 'inherit',
-                  color: 'var(--gold-bright)',
-                  textDecoration: 'underline',
-                  cursor: 'pointer',
-                }}
               >
                 {copy.switchLabel}
               </button>

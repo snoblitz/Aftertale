@@ -7,6 +7,22 @@ Phase 1 ships.
 
 ## [Unreleased] — Phase 0 shipped 🎉
 
+### Changed — Auth modal redesign *(2026-05-29)*
+
+- **The auth modal got a proper face.** It was borrowing the utilitarian
+  settings-row (cramped input-beside-button) and dumping raw Supabase
+  errors as a bare red line — read like a generic web form. Now it has its
+  own centered, vertical treatment: a `✦ AFTERTALE` kicker + Cinzel title +
+  ornament rhythm (matching the app hero), a full-width field with a
+  full-width button beneath it, and a warm parchment **notice chip**
+  (left-accent bar, ⚠ glyph) in place of the red slab. New `.at-auth-*`
+  classes in `index.css`.
+- **Humanized auth errors.** Raw strings like *"For security purposes, you
+  can only request this after 38 seconds."* are translated in `auth.ts`
+  (`humanizeAuthError`) to the app's plainer voice — *"Easy — you can
+  request another code in 38s."* Covers rate-limit, expiry, and
+  no-such-account cases.
+
 ### Fixed — OTP code length + segmented input *(2026-05-29)*
 
 - **Auth could never verify.** The project emits **8-digit** email codes but

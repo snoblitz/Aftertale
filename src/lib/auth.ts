@@ -36,6 +36,28 @@ export const OTP_LENGTH = 8;
 
 const OTP_RE = new RegExp(`^\\d{${OTP_LENGTH}}$`);
 
+// Supabase auth errors come back as raw, slightly clinical strings
+// ("For security purposes, you can only request this after 38 seconds.").
+// Translate the ones a user can actually hit into the app's plainer voice.
+function humanizeAuthError(raw: string): string {
+  if (!raw) return 'Something went wrong. Try again in a moment.';
+  const rate = raw.match(/after (\d+) seconds?/i);
+  if (rate) {
+    const s = rate[1];
+    return `Easy — you can request another code in ${s}s.`;
+  }
+  if (/rate limit|too many/i.test(raw)) {
+    return 'Too many requests just now. Give it a minute, then try again.';
+  }
+  if (/expired/i.test(raw)) {
+    return 'That code expired. Request a fresh one.';
+  }
+  if (/signups? not allowed|not authorized/i.test(raw)) {
+    return 'We couldn’t find a chronicle for that email. Save one first, or check the address.';
+  }
+  return raw;
+}
+
 function cacheUserId(id: string | null): void {
   try {
     if (id) window.localStorage.setItem(USER_ID_KEY, id);
@@ -133,7 +155,7 @@ export async function saveChronicle(email: string): Promise<{ error: string | nu
       // cloud-authoritative hydrate and tombstone this device's scratch heroes.
       return { error: 'That email already has a chronicle.', conflict: true };
     }
-    return { error: raw };
+    return { error: humanizeAuthError(raw) };
   }
   return { error: null };
 }
@@ -146,7 +168,7 @@ export async function signIn(email: string): Promise<{ error: string | null; con
     email: email.trim(),
     options: { shouldCreateUser: false },
   });
-  return { error: error?.message ?? null };
+  return { error: error ? humanizeAuthError(error.message) : null };
 }
 
 /**
